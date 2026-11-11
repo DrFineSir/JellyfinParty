@@ -1,0 +1,31 @@
+name: Bug report
+description: Report a reproducible problem with Jellyfin Party.
+body:
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: Jellyfin Server, Jellyfin Web, plugin version, and browser.
+    validations:
+      required: true
+  - type: dropdown
+    id: transport
+    attributes:
+      label: Call connection
+      options:
+        - Not related to calls
+        - P2P
+        - Tunnel relay
+        - Unknown
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps and expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Remove access tokens, WebSocket ticket URLs, and personal information before sharing.
+      render: text

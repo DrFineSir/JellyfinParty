@@ -1,0 +1,32 @@
+<div id="JellyfinPartyConfig" data-role="page" class="page type-interior pluginConfigurationPage">
+  <div data-role="content"><div class="content-primary"><form id="PartyConfigForm">
+    <h2>Jellyfin Party</h2><p>Watch parties with chat, transparent webcams, P2P calls and a WebSocket relay.</p>
+    <p>The web integration must also be installed into the Jellyfin web directory. See the installation section in the repository README.</p>
+    <div class="inputContainer"><label class="inputLabel" for="MaxParticipants">Participants per room</label><input is="emby-input" id="MaxParticipants" type="number" min="2" max="64" required /></div>
+    <div class="inputContainer"><label class="inputLabel" for="MaxCameras">Simultaneous cameras per room</label><input is="emby-input" id="MaxCameras" type="number" min="1" max="24" required /></div>
+    <div class="inputContainer"><label class="inputLabel" for="MaxRooms">Maximum rooms</label><input is="emby-input" id="MaxRooms" type="number" min="1" max="64" required /></div>
+    <div class="inputContainer"><label class="inputLabel" for="StunUrl">STUN discovery URL (optional)</label><input is="emby-input" id="StunUrl" type="text" /><div class="fieldDescription">Used to discover direct P2P connections. Leave empty for local-network P2P only, with relay fallback for remote users.</div></div>
+    <label><input is="emby-checkbox" id="EnableRelay" type="checkbox" /> Enable WebSocket media relay</label>
+    <p>Relay video uses 480×270 JPEG at approximately 6 fps; voice uses 16 kHz mono PCM. Relay bandwidth grows with the number of connected participants. No forwarded ports are needed.</p>
+    <button is="emby-button" type="submit" class="raised button-submit block"><span>Save</span></button>
+  </form></div></div>
+  <script type="text/javascript">
+    var partyPluginId = 'e6ae3bcc-179d-4e47-a214-b12502fb22df';
+    document.querySelector('#JellyfinPartyConfig').addEventListener('pageshow', function () {
+      Dashboard.showLoadingMsg();
+      ApiClient.getPluginConfiguration(partyPluginId).then(function (config) {
+        ['MaxParticipants','MaxCameras','MaxRooms','StunUrl'].forEach(function (key) { document.getElementById(key).value = config[key]; });
+        document.getElementById('EnableRelay').checked = config.EnableRelay;
+        Dashboard.hideLoadingMsg();
+      }).catch(function () { Dashboard.hideLoadingMsg(); Dashboard.alert('Could not load party configuration.'); });
+    });
+    document.querySelector('#PartyConfigForm').addEventListener('submit', function (event) {
+      event.preventDefault(); Dashboard.showLoadingMsg();
+      ApiClient.getPluginConfiguration(partyPluginId).then(function (config) {
+        ['MaxParticipants','MaxCameras','MaxRooms'].forEach(function (key) { config[key] = Number(document.getElementById(key).value); });
+        config.StunUrl = document.getElementById('StunUrl').value.trim(); config.EnableRelay = document.getElementById('EnableRelay').checked;
+        return ApiClient.updatePluginConfiguration(partyPluginId, config);
+      }).then(Dashboard.processPluginConfigurationUpdateResult).catch(function () { Dashboard.hideLoadingMsg(); Dashboard.alert('Could not save party configuration.'); });
+    });
+  </script>
+</div>

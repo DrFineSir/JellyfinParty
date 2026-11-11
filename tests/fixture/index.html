@@ -1,0 +1,51 @@
+<!doctype html><meta charset="utf-8"><title>Jellyfin Party — isolated test fixture</title>
+<style>body{margin:0;background:#10121a;color:#eee;font:16px system-ui}main{padding:35px}.customMenuOptions{display:flex;gap:20px}a{color:#c6baff}video{width:100%;height:65vh;background:linear-gradient(135deg,#172b32,#241a37)}button{padding:10px;margin:5px}#status{color:#b7a8ff}canvas{display:none}</style>
+<main><h1>Jellyfin Party · local test player</h1><p>This isolated fixture uses synthetic media and fake accounts. It does not access your Jellyfin server, camera, or microphone.</p><nav class="customMenuOptions"></nav><p id="audio-packets">Relay voice packets decoded (output muted): 0</p><p id="status">Synthetic camera: off · voice: quiet</p><button id="speak">Toggle synthetic speech</button><video id="movie" controls muted></video></main>
+<script type="module">
+import { boot } from '/assets/party.js';
+// Keep every test output silent at the hardware destination, including P2P audio.
+const originalConnect = AudioNode.prototype.connect;
+const silentOutputs = new WeakMap();
+AudioNode.prototype.connect = function(target, ...args) {
+    if (target instanceof AudioDestinationNode) {
+        let sink = silentOutputs.get(this.context);
+        if (!sink) { sink = this.context.createGain(); sink.gain.value = 0; originalConnect.call(sink, target); silentOutputs.set(this.context, sink); }
+        return originalConnect.call(this, sink, ...args);
+    }
+    return originalConnect.call(this, target, ...args);
+};
+const originalPlay = HTMLMediaElement.prototype.play;
+HTMLMediaElement.prototype.play = function(...args) { this.muted = true; return originalPlay.apply(this, args); };
+let decodedPackets = 0;
+const originalBuffer = AudioContext.prototype.createBuffer;
+AudioContext.prototype.createBuffer = function(channels, count, rate) {
+    if (rate === 16000) { decodedPackets++; document.querySelector('#audio-packets').textContent = `Relay voice packets decoded (output muted): ${decodedPackets}`; }
+    return originalBuffer.call(this, channels, count, rate);
+};
+const params = new URLSearchParams(location.search); const user = params.get('user') === 'bob' ? '22222222-2222-2222-2222-222222222222' : '11111111-1111-1111-1111-111111111111';
+const device = params.get('user') || 'alice'; const movie = document.querySelector('#movie'); let offset = 0, playing = false; let activeItem = null;
+const canvas = document.createElement('canvas'); canvas.width = 640; canvas.height = 360; const ctx = canvas.getContext('2d'); let frame = 0;
+setInterval(() => { ctx.fillStyle = device === 'bob' ? '#354c70' : '#5d4568'; ctx.fillRect(0,0,640,360); ctx.fillStyle='#eee'; ctx.font='36px system-ui'; ctx.fillText(device === 'bob' ? 'Bob · synthetic camera' : 'Alice · synthetic camera', 45,165); ctx.font='18px system-ui'; ctx.fillText(`Frame ${frame++}`,45,210); }, 100);
+let speech = false; document.querySelector('#speak').onclick = () => { speech = !speech; document.querySelector('#status').textContent = `Synthetic voice: ${speech ? 'speaking' : 'quiet'}`; };
+Object.defineProperty(navigator.mediaDevices, 'getUserMedia', { configurable:true, value: async constraints => {
+    if (constraints.video) return canvas.captureStream(15);
+    const ac = new AudioContext(); await ac.resume(); const oscillator = ac.createOscillator(); oscillator.frequency.value = device === 'bob' ? 480 : 330; const gain = ac.createGain(); gain.gain.value=0; const destination=ac.createMediaStreamDestination(); oscillator.connect(gain);gain.connect(destination);oscillator.start(); const timer=setInterval(()=>gain.gain.value=speech ? .15 : 0,50); const track=destination.stream.getAudioTracks()[0]; const stop=track.stop.bind(track); track.stop=()=>{clearInterval(timer);oscillator.stop();ac.close();stop();}; return destination.stream;
+} });
+function report(event='timeupdate') { if (activeItem) window.ApiClient.reportPlaybackProgress({ ItemId: activeItem, PositionTicks: Math.round((movie.currentTime+offset)*1e7), IsPaused: !playing, EventName:event }); }
+window.ApiClient = {
+    accessToken:()=> 'fixture-only', serverId:()=> 'fixture', getCurrentUserId:()=>user, deviceId:()=>device,
+    getUrl:path => `${location.origin}/${path}`, reportPlaybackStart:()=>Promise.resolve(), reportPlaybackProgress:()=>Promise.resolve(), reportPlaybackStopped:()=>Promise.resolve(),
+    ajax:async options=> {
+        const url = new URL(options.url); const path=url.pathname;
+        if(path==='/Sessions')return [{Id:device,DeviceId:device,UserId:user}];
+        if(path==='/Items')return {Items:[{Id:'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',Name:'Synthetic test movie',RunTimeTicks:6000000000}]};
+        if(path===`/Sessions/${device}/Playing`){activeItem='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';offset=Number(url.searchParams.get('startPositionTicks')||0)/1e7-movie.currentTime;movie.srcObject=canvas.captureStream(15);await movie.play();playing=true;window.ApiClient.reportPlaybackStart({ItemId:activeItem,PositionTicks:offset*1e7});report();return;}
+        if(path.startsWith(`/Sessions/${device}/Playing/`)){const command=path.split('/').at(-1);if(command==='Pause'){playing=false;movie.pause();report('pause');}if(command==='Unpause'){playing=true;await movie.play();report('unpause');}if(command==='Seek'){offset=Number(url.searchParams.get('seekPositionTicks'))/1e7-movie.currentTime;report();}return;}
+        const response = await fetch(url,{method:options.type,headers:{'Test-User':user,'Test-Device':device,...(options.contentType?{'Content-Type':options.contentType}:{})},body:options.data});
+        if(!response.ok){const text=await response.text();throw {status:response.status,responseText:text};}return response.status===204?undefined:response.json();
+    }
+};
+movie.addEventListener('play',()=>{playing=true;report('unpause');});movie.addEventListener('pause',()=>{playing=false;report('pause');});
+setInterval(()=>report(),1000);
+boot(`${location.origin}/assets/`);
+</script>

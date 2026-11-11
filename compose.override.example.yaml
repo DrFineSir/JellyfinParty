@@ -1,0 +1,10 @@
+# Merge this with an existing Compose configuration. Match the existing
+# Jellyfin service name, and preserve all volumes, user, devices, and networks.
+services:
+  jellyfin:
+    build:
+      context: .
+      args:
+        JELLYFIN_IMAGE: jellyfin/jellyfin:12.1
+    image: jellyfin-party:12.1-0.1.0
+# Keep existing ports, volumes, devices, and reverse-proxy networks.

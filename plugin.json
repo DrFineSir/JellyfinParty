@@ -1,0 +1,10 @@
+{
+  "name": "Jellyfin Party",
+  "guid": "e6ae3bcc-179d-4e47-a214-b12502fb22df",
+  "targetAbi": "12.1.0.0",
+  "framework": "net10.0",
+  "overview": "Watch together with chat and transparent webcams.",
+  "description": "Synchronized watch parties with collapsible chat, speaking-sensitive webcam opacity, P2P calls, and a WebSocket relay fallback. Requires the web integration described in the installation guide.",
+  "category": "General",
+  "assembly": "Jellyfin.Plugin.JellyfinParty.dll"
+}

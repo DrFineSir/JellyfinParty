@@ -1,0 +1,25 @@
+# Generated builds and releases
+**/bin/
+**/obj/
+dist/
+release/
+.artifacts/
+node_modules/
+__pycache__/
+*.py[cod]
+
+# Local configuration and tooling
+.env
+.env.*
+!.env.example
+*.user
+*.log
+.vs/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Backups made by the web integration installer
+*.before-jellyfin-party
+*.party-tmp
