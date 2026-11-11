@@ -7,5 +7,13 @@
     "test:integration": "node tests/integration.mjs",
     "test:syntax": "node --check src/Web/party.js && node --check src/Web/call.js && node --check src/Web/player.js",
     "test": "node --test tests/web-unit.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DrFineSir/JellyfinParty.git"
+  },
+  "homepage": "https://github.com/DrFineSir/JellyfinParty#readme",
+  "bugs": {
+    "url": "https://github.com/DrFineSir/JellyfinParty/issues"
   }
 }

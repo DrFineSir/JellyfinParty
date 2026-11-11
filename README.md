@@ -11,10 +11,10 @@ Watch parties for **Jellyfin 12.1** with synchronized playback, collapsible chat
 In **Dashboard → Plugins → Repositories**, add:
 
 ```text
-https://github.com/OWNER/REPOSITORY/releases/latest/download/manifest.json
+https://github.com/DrFineSir/JellyfinParty/releases/latest/download/manifest.json
 ```
 
-Replace `OWNER/REPOSITORY` with this GitHub repository's name. A published release must exist first. Open the plugin catalog, install **Jellyfin Party**, and restart Jellyfin.
+Open the plugin catalog, install **Jellyfin Party**, and restart Jellyfin. The repository URL becomes available when the [first release](https://github.com/DrFineSir/JellyfinParty/releases) has finished publishing.
 
 ### 2. Enable the web interface
 
